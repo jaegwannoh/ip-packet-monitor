@@ -1,0 +1,19 @@
+# IP Packet Monitor config
+# KEY=VALUE
+
+MONITOR_IP=10.0.0.1
+
+HOST=192.192.192.192
+PORT=22
+USER=noh
+PASSWORD=1234
+REMOTE_DIR=/home/noh/logs
+
+LOCAL_DIR=logs
+INTERVAL=60
+
+# NAME=name,limit (packets per 1 hour)
+# alarm when packets >= limit
+# no limit (always OK): NAME=name  or  NAME=name,0
+NAME=web01,500
+NAME=web02,300
