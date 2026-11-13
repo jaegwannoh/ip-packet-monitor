@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 import os
+import socket
 import datetime
 import paramiko
 from logparser import file_name
@@ -15,6 +16,7 @@ def fetch_logs(cfg):
         ssh.connect(cfg['HOST'], port=cfg['PORT'], username=cfg['USER'],
                     password=cfg['PASSWORD'], timeout=5)
         sftp = ssh.open_sftp()
+        sftp.get_channel().settimeout(30)  # no data 30s -> socket.timeout
         today = datetime.date.today()
         yesterday = today - datetime.timedelta(days=1)
         missing = []
@@ -26,9 +28,15 @@ def fetch_logs(cfg):
                 local = os.path.join(cfg['LOCAL_DIR'], fn)
                 try:
                     sftp.stat(remote)  # check exists (get makes empty file)
+                except socket.timeout:  # timeout is IOError too, raise it
+                    raise
                 except IOError:
                     continue
-                sftp.get(remote, local)
+                tmp = local + '.tmp'  # keep old file if download fails
+                sftp.get(remote, tmp)
+                if os.path.exists(local):
+                    os.remove(local)
+                os.rename(tmp, local)
                 ok = True
                 break
             if not ok:
