@@ -111,6 +111,9 @@ class MainWindow(QtGui.QWidget):
         self.timer.start(cfg['INTERVAL'] * 1000)
         QtCore.QTimer.singleShot(100, self.check)
 
+        self.beep_timer = QtCore.QTimer(self)
+        self.beep_timer.timeout.connect(self.beep)
+
     def add_card(self, box, caption):
         card = QtGui.QFrame()
         card.setObjectName('card')
@@ -167,11 +170,21 @@ class MainWindow(QtGui.QWidget):
         self.status_label.setText('● ' + (msg if msg else '정상'))
         self.apply_style()
 
+        self.update_beep()
+
+    def beep(self):
+        try:
+            winsound.Beep(1000, 300)
+        except RuntimeError:  # no sound device
+            pass
+
+    def update_beep(self):
         if self.alert and self.sound_on:
-            try:
-                winsound.Beep(1000, 500)
-            except RuntimeError:  # no sound device
-                pass
+            if not self.beep_timer.isActive():
+                self.beep()
+                self.beep_timer.start(1000)
+        else:
+            self.beep_timer.stop()
 
     def set_row(self, row, values, over, has_log):
         last_col = len(values) - 1
@@ -196,6 +209,7 @@ class MainWindow(QtGui.QWidget):
     def toggle_sound(self):
         self.sound_on = self.sound_btn.isChecked()
         self.update_sound_btn()
+        self.update_beep()
 
     def update_sound_btn(self):
         self.sound_btn.setText('소리 ON' if self.sound_on else '소리 OFF')
